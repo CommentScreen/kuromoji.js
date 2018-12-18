@@ -18,7 +18,6 @@
 "use strict";
 
 var path = require("path");
-var async = require("async");
 var DynamicDictionaries = require("../dict/DynamicDictionaries");
 var Tokenizer = require("../Tokenizer");
 
@@ -40,92 +39,30 @@ DictionaryLoader.prototype.loadArrayBuffer = function (file, callback) {
  * Load dictionary files
  * @param {DictionaryLoader~onLoad} load_callback Callback function called after loaded
  */
-DictionaryLoader.prototype.load = function (load_callback) {
+DictionaryLoader.prototype.load = async function (load_callback) {
+    var err;
     var dic = this.dic;
-    var dic_path = this.dic_path;
-    var loadArrayBuffer = this.loadArrayBuffer;
-
-    async.parallel([
-        // Trie
-        function (callback) {
-            async.map([ "base.dat", "check.dat" ], function (filename, _callback) {
-                loadArrayBuffer(path.join(dic_path, filename), function (err, buffer) {
-                    if(err) {
-                        return _callback(err);
-                    }
-                    _callback(null, buffer);
-                });
-            }, function (err, buffers) {
-                if(err) {
-                    return callback(err);
-                }
-                var base_buffer = new Int32Array(buffers[0]);
-                var check_buffer = new Int32Array(buffers[1]);
-
-                dic.loadTrie(base_buffer, check_buffer);
-                callback(null);
+    var partialGetArrayBufferData = (name) => {
+        return new Promise((resolve, reject) => {
+            this.loadArrayBuffer(path.join(this.dic_path, name + '.dat'), (err, res) => {
+                if (err)
+                    return reject();
+                return resolve(res);
             });
-        },
-        // Token info dictionaries
-        function (callback) {
-            async.map([ "tid.dat", "tid_pos.dat", "tid_map.dat" ], function (filename, _callback) {
-                loadArrayBuffer(path.join(dic_path, filename), function (err, buffer) {
-                    if(err) {
-                        return _callback(err);
-                    }
-                    _callback(null, buffer);
-                });
-            }, function (err, buffers) {
-                if(err) {
-                    return callback(err);
-                }
-                var token_info_buffer = new Uint8Array(buffers[0]);
-                var pos_buffer = new Uint8Array(buffers[1]);
-                var target_map_buffer = new Uint8Array(buffers[2]);
+        });
+    };
 
-                dic.loadTokenInfoDictionaries(token_info_buffer, pos_buffer, target_map_buffer);
-                callback(null);
-            });
-        },
-        // Connection cost matrix
-        function (callback) {
-            loadArrayBuffer(path.join(dic_path, "cc.dat"), function (err, buffer) {
-                if(err) {
-                    return callback(err);
-                }
-                var cc_buffer = new Int16Array(buffer);
-                dic.loadConnectionCosts(cc_buffer);
-                callback(null);
-            });
-        },
-        // Unknown dictionaries
-        function (callback) {
-            async.map([ "unk.dat", "unk_pos.dat", "unk_map.dat", "unk_char.dat", "unk_compat.dat", "unk_invoke.dat" ], function (filename, _callback) {
-                loadArrayBuffer(path.join(dic_path, filename), function (err, buffer) {
-                    if(err) {
-                        return _callback(err);
-                    }
-                    _callback(null, buffer);
-                });
-            }, function (err, buffers) {
-                if(err) {
-                    return callback(err);
-                }
-                var unk_buffer = new Uint8Array(buffers[0]);
-                var unk_pos_buffer = new Uint8Array(buffers[1]);
-                var unk_map_buffer = new Uint8Array(buffers[2]);
-                var cat_map_buffer = new Uint8Array(buffers[3]);
-                var compat_cat_map_buffer = new Uint32Array(buffers[4]);
-                var invoke_def_buffer = new Uint8Array(buffers[5]);
+    try {
+        dic.loadTrie.apply(dic, await Promise.all(['base', 'check'].map(async name => new Int32Array(await partialGetArrayBufferData(name)))));
+        dic.loadTokenInfoDictionaries.apply(dic, await Promise.all((['tid', 'tid_pos', 'tid_map'].map(async name => new Uint8Array(await partialGetArrayBufferData(name))))));
+        dic.loadConnectionCosts(new Int16Array(await partialGetArrayBufferData('cc')));
+        dic.loadUnknownDictionaries.apply(dic, await Promise.all(['unk', 'unk_pos', 'unk_map', 'unk_char', 'unk_compat', 'unk_invoke']
+            .map(async name => name == 'unk_compat' ? new Uint32Array(await partialGetArrayBufferData(name)) : new Uint8Array(await partialGetArrayBufferData(name)))));
+    } catch (e) {
+        err = e;
+    }
 
-                dic.loadUnknownDictionaries(unk_buffer, unk_pos_buffer, unk_map_buffer, cat_map_buffer, compat_cat_map_buffer, invoke_def_buffer);
-                // dic.loadUnknownDictionaries(char_buffer, unk_buffer);
-                callback(null);
-            });
-        }
-    ], function (err) {
-        load_callback(err, new Tokenizer(dic));
-    });
+    load_callback(err, new Tokenizer(dic));
 };
 
 /**
