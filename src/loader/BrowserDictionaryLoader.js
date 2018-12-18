@@ -20,6 +20,7 @@
 var DictionaryLoader = require("./DictionaryLoader");
 var DB_NAME = "kuromoji-dict";
 var TABLE_NAME = "dict-data";
+var NUM_DICS = 12;
 
 /**
  * BrowserDictionaryLoader inherits DictionaryLoader, using jQuery XHR for download
@@ -113,6 +114,19 @@ BrowserDictionaryLoader.prototype.loadArrayBuffer = function (url, callback) {
  * @param {BrowserDictionaryLoader~onIsCached} callback Callback function
  */
 BrowserDictionaryLoader.prototype.isCached = function (callback) {
+    if (this.dbPromise) {
+        this.dbPromise.then((db) => {
+            db.transaction([TABLE_NAME]).objectStore(TABLE_NAME)
+                .count().onsuccess = function(event) {
+                    if (event.target.result === NUM_DICS) {
+                        return callback(null, true);
+                    }
+                    return callback(null, false);
+                }
+        });
+    } else {
+        callback(null, false);
+    }
 };
 
 /**

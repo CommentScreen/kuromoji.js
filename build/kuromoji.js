@@ -2413,6 +2413,7 @@ module.exports = kuromoji;
 var DictionaryLoader = require("./DictionaryLoader");
 var DB_NAME = "kuromoji-dict";
 var TABLE_NAME = "dict-data";
+var NUM_DICS = 12;
 
 /**
  * BrowserDictionaryLoader inherits DictionaryLoader, using jQuery XHR for download
@@ -2506,6 +2507,19 @@ BrowserDictionaryLoader.prototype.loadArrayBuffer = function (url, callback) {
  * @param {BrowserDictionaryLoader~onIsCached} callback Callback function
  */
 BrowserDictionaryLoader.prototype.isCached = function (callback) {
+    if (this.dbPromise) {
+        this.dbPromise.then((db) => {
+            db.transaction([TABLE_NAME]).objectStore(TABLE_NAME)
+                .count().onsuccess = function(event) {
+                    if (event.target.result === NUM_DICS) {
+                        return callback(null, true);
+                    }
+                    return callback(null, false);
+                }
+        });
+    } else {
+        callback(null, false);
+    }
 };
 
 /**
@@ -2514,15 +2528,13 @@ BrowserDictionaryLoader.prototype.isCached = function (callback) {
  */
 BrowserDictionaryLoader.prototype.clearCache = function (callback) {
     var request = window.indexedDB.deleteDatabase(DB_NAME);
-    var err;
 
     request.onerror = function(event) {
-        err = 'Error deleting database';
-        callback(err, null);
+        callback('Error deleting database', null);
     };
 
     request.onsuccess = function(event) {
-        callback(err, null);
+        callback(null, null);
     };
 };
 
@@ -2586,13 +2598,13 @@ DictionaryLoader.prototype.clearCache = function (file, callback) {
  * @param {DictionaryLoader~onLoad} load_callback Callback function called after loaded
  */
 DictionaryLoader.prototype.load = async function (load_callback) {
-    var err;
+    var err = null;
     var dic = this.dic;
     var partialGetArrayBufferData = (name) => {
         return new Promise((resolve, reject) => {
             this.loadArrayBuffer(path.join(this.dic_path, name + '.dat'), (err, res) => {
                 if (err)
-                    return reject();
+                    return reject(err);
                 return resolve(res);
             });
         });
