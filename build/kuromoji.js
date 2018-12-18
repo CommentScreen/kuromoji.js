@@ -6935,64 +6935,7 @@ Tokenizer.prototype.getLattice = function (text) {
 
 module.exports = Tokenizer;
 
-},{"./util/IpadicFormatter":21,"./viterbi/ViterbiBuilder":23,"./viterbi/ViterbiSearcher":26}],6:[function(require,module,exports){
-/*
- * Copyright 2014 Takuya Asano
- * Copyright 2010-2014 Atilika Inc. and contributors
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
-"use strict";
-
-var Tokenizer = require("./Tokenizer");
-var DictionaryLoader = require("./loader/NodeDictionaryLoader");
-
-/**
- * TokenizerBuilder create Tokenizer instance.
- * @param {Object} option JSON object which have key-value pairs settings
- * @param {string} option.dicPath Dictionary directory path (or URL using in browser)
- * @constructor
- */
-function TokenizerBuilder(option) {
-    if (option.dicPath == null) {
-        this.dic_path = "dict/";
-    } else {
-        this.dic_path = option.dicPath;
-    }
-}
-
-/**
- * Build Tokenizer instance by asynchronous manner
- * @param {TokenizerBuilder~onLoad} callback Callback function
- */
-TokenizerBuilder.prototype.build = function (callback) {
-    var loader = new DictionaryLoader(this.dic_path);
-    loader.load(function (err, dic) {
-        callback(err, new Tokenizer(dic));
-    });
-};
-
-/**
- * Callback used by build
- * @callback TokenizerBuilder~onLoad
- * @param {Object} err Error object
- * @param {Tokenizer} tokenizer Prepared Tokenizer
- */
-
-module.exports = TokenizerBuilder;
-
-},{"./Tokenizer":5,"./loader/NodeDictionaryLoader":18}],7:[function(require,module,exports){
+},{"./util/IpadicFormatter":20,"./viterbi/ViterbiBuilder":22,"./viterbi/ViterbiSearcher":25}],6:[function(require,module,exports){
 /*
  * Copyright 2014 Takuya Asano
  * Copyright 2010-2014 Atilika Inc. and contributors
@@ -7031,7 +6974,7 @@ function CharacterClass(class_id, class_name, is_always_invoke, is_grouping, max
 
 module.exports = CharacterClass;
 
-},{}],8:[function(require,module,exports){
+},{}],7:[function(require,module,exports){
 /*
  * Copyright 2014 Takuya Asano
  * Copyright 2010-2014 Atilika Inc. and contributors
@@ -7238,7 +7181,7 @@ CharacterDefinition.prototype.lookup = function (ch) {
 
 module.exports = CharacterDefinition;
 
-},{"../util/SurrogateAwareString":22,"./CharacterClass":7,"./InvokeDefinitionMap":11}],9:[function(require,module,exports){
+},{"../util/SurrogateAwareString":21,"./CharacterClass":6,"./InvokeDefinitionMap":10}],8:[function(require,module,exports){
 /*
  * Copyright 2014 Takuya Asano
  * Copyright 2010-2014 Atilika Inc. and contributors
@@ -7299,7 +7242,7 @@ ConnectionCosts.prototype.loadConnectionCosts = function (connection_costs_buffe
 
 module.exports = ConnectionCosts;
 
-},{}],10:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 /*
  * Copyright 2014 Takuya Asano
  * Copyright 2010-2014 Atilika Inc. and contributors
@@ -7383,7 +7326,7 @@ DynamicDictionaries.prototype.loadUnknownDictionaries = function (unk_buffer, un
 
 module.exports = DynamicDictionaries;
 
-},{"./ConnectionCosts":9,"./TokenInfoDictionary":12,"./UnknownDictionary":13,"doublearray":2}],11:[function(require,module,exports){
+},{"./ConnectionCosts":8,"./TokenInfoDictionary":11,"./UnknownDictionary":12,"doublearray":2}],10:[function(require,module,exports){
 /*
  * Copyright 2014 Takuya Asano
  * Copyright 2010-2014 Atilika Inc. and contributors
@@ -7495,7 +7438,7 @@ InvokeDefinitionMap.prototype.toBuffer = function () {
 
 module.exports = InvokeDefinitionMap;
 
-},{"../util/ByteBuffer":20,"./CharacterClass":7}],12:[function(require,module,exports){
+},{"../util/ByteBuffer":19,"./CharacterClass":6}],11:[function(require,module,exports){
 /*
  * Copyright 2014 Takuya Asano
  * Copyright 2010-2014 Atilika Inc. and contributors
@@ -7649,7 +7592,7 @@ TokenInfoDictionary.prototype.getFeatures = function (token_info_id_str) {
 
 module.exports = TokenInfoDictionary;
 
-},{"../util/ByteBuffer":20}],13:[function(require,module,exports){
+},{"../util/ByteBuffer":19}],12:[function(require,module,exports){
 /*
  * Copyright 2014 Takuya Asano
  * Copyright 2010-2014 Atilika Inc. and contributors
@@ -7709,7 +7652,7 @@ UnknownDictionary.prototype.loadUnknownDictionaries = function (unk_buffer, unk_
 
 module.exports = UnknownDictionary;
 
-},{"../util/ByteBuffer":20,"./CharacterDefinition":8,"./TokenInfoDictionary":12}],14:[function(require,module,exports){
+},{"../util/ByteBuffer":19,"./CharacterDefinition":7,"./TokenInfoDictionary":11}],13:[function(require,module,exports){
 /*
  * Copyright 2014 Takuya Asano
  * Copyright 2010-2014 Atilika Inc. and contributors
@@ -7779,7 +7722,7 @@ CharacterDefinitionBuilder.prototype.build = function () {
 
 module.exports = CharacterDefinitionBuilder;
 
-},{"../CharacterDefinition":8,"../InvokeDefinitionMap":11}],15:[function(require,module,exports){
+},{"../CharacterDefinition":7,"../InvokeDefinitionMap":10}],14:[function(require,module,exports){
 /*
  * Copyright 2014 Takuya Asano
  * Copyright 2010-2014 Atilika Inc. and contributors
@@ -7851,7 +7794,7 @@ ConnectionCostsBuilder.prototype.build = function () {
 
 module.exports = ConnectionCostsBuilder;
 
-},{"../ConnectionCosts":9}],16:[function(require,module,exports){
+},{"../ConnectionCosts":8}],15:[function(require,module,exports){
 /*
  * Copyright 2014 Takuya Asano
  * Copyright 2010-2014 Atilika Inc. and contributors
@@ -8011,7 +7954,7 @@ DictionaryBuilder.prototype.buildDoubleArray = function () {
 
 module.exports = DictionaryBuilder;
 
-},{"../DynamicDictionaries":10,"../TokenInfoDictionary":12,"../UnknownDictionary":13,"./CharacterDefinitionBuilder":14,"./ConnectionCostsBuilder":15,"doublearray":2}],17:[function(require,module,exports){
+},{"../DynamicDictionaries":9,"../TokenInfoDictionary":11,"../UnknownDictionary":12,"./CharacterDefinitionBuilder":13,"./ConnectionCostsBuilder":14,"doublearray":2}],16:[function(require,module,exports){
 /*
  * Copyright 2014 Takuya Asano
  * Copyright 2010-2014 Atilika Inc. and contributors
@@ -8031,22 +7974,22 @@ module.exports = DictionaryBuilder;
 
 "use strict";
 
-var TokenizerBuilder = require("./TokenizerBuilder");
 var DictionaryBuilder = require("./dict/builder/DictionaryBuilder");
+var DictionaryLoader = require("./loader/NodeDictionaryLoader");
 
 // Public methods
 var kuromoji = {
-    builder: function (option) {
-        return new TokenizerBuilder(option);
+    loader: function (options) {
+        return new DictionaryLoader(options);
     },
-    dictionaryBuilder: function () {
+    builder: function () {
         return new DictionaryBuilder();
     }
 };
 
 module.exports = kuromoji;
 
-},{"./TokenizerBuilder":6,"./dict/builder/DictionaryBuilder":16}],18:[function(require,module,exports){
+},{"./dict/builder/DictionaryBuilder":15,"./loader/NodeDictionaryLoader":17}],17:[function(require,module,exports){
 /*
  * Copyright 2014 Takuya Asano
  * Copyright 2010-2014 Atilika Inc. and contributors
@@ -8070,11 +8013,11 @@ var DictionaryLoader = require("./DictionaryLoader");
 
 /**
  * BrowserDictionaryLoader inherits DictionaryLoader, using jQuery XHR for download
- * @param {string} dic_path Dictionary path
+ * @param {object} options Options for the dictionary
  * @constructor
  */
-function BrowserDictionaryLoader(dic_path) {
-    DictionaryLoader.apply(this, [dic_path]);
+function BrowserDictionaryLoader(options) {
+    DictionaryLoader.call(this, options);
 }
 
 BrowserDictionaryLoader.prototype = Object.create(DictionaryLoader.prototype);
@@ -8087,6 +8030,7 @@ BrowserDictionaryLoader.prototype = Object.create(DictionaryLoader.prototype);
  * @param {BrowserDictionaryLoader~onLoad} callback Callback function
  */
 BrowserDictionaryLoader.prototype.loadArrayBuffer = function (url, callback) {
+    // Check if we have it cached
     var xhr = new XMLHttpRequest();
     xhr.open("GET", url, true);
     xhr.responseType = "arraybuffer";
@@ -8112,7 +8056,7 @@ BrowserDictionaryLoader.prototype.loadArrayBuffer = function (url, callback) {
 
 module.exports = BrowserDictionaryLoader;
 
-},{"./DictionaryLoader":19}],19:[function(require,module,exports){
+},{"./DictionaryLoader":18}],18:[function(require,module,exports){
 /*
  * Copyright 2014 Takuya Asano
  * Copyright 2010-2014 Atilika Inc. and contributors
@@ -8135,15 +8079,16 @@ module.exports = BrowserDictionaryLoader;
 var path = require("path");
 var async = require("async");
 var DynamicDictionaries = require("../dict/DynamicDictionaries");
+var Tokenizer = require("../Tokenizer");
 
 /**
  * DictionaryLoader base constructor
  * @param {string} dic_path Dictionary path
  * @constructor
  */
-function DictionaryLoader(dic_path) {
+function DictionaryLoader(options) {
     this.dic = new DynamicDictionaries();
-    this.dic_path = dic_path;
+    this.dic_path = options.dic_path || 'dict/';
 }
 
 DictionaryLoader.prototype.loadArrayBuffer = function (file, callback) {
@@ -8238,7 +8183,7 @@ DictionaryLoader.prototype.load = function (load_callback) {
             });
         }
     ], function (err) {
-        load_callback(err, dic);
+        load_callback(err, new Tokenizer(dic));
     });
 };
 
@@ -8251,7 +8196,7 @@ DictionaryLoader.prototype.load = function (load_callback) {
 
 module.exports = DictionaryLoader;
 
-},{"../dict/DynamicDictionaries":10,"async":1,"path":3}],20:[function(require,module,exports){
+},{"../Tokenizer":5,"../dict/DynamicDictionaries":9,"async":1,"path":3}],19:[function(require,module,exports){
 /*
  * Copyright 2014 Takuya Asano
  * Copyright 2010-2014 Atilika Inc. and contributors
@@ -8542,7 +8487,7 @@ ByteBuffer.prototype.getString = function (index) {
 
 module.exports = ByteBuffer;
 
-},{}],21:[function(require,module,exports){
+},{}],20:[function(require,module,exports){
 /*
  * Copyright 2014 Takuya Asano
  * Copyright 2010-2014 Atilika Inc. and contributors
@@ -8611,7 +8556,7 @@ IpadicFormatter.prototype.formatUnknownEntry = function (word_id, position, type
 
 module.exports = IpadicFormatter;
 
-},{}],22:[function(require,module,exports){
+},{}],21:[function(require,module,exports){
 /*
  * Copyright 2014 Takuya Asano
  * Copyright 2010-2014 Atilika Inc. and contributors
@@ -8704,7 +8649,7 @@ SurrogateAwareString.isSurrogatePair = function (ch) {
 
 module.exports = SurrogateAwareString;
 
-},{}],23:[function(require,module,exports){
+},{}],22:[function(require,module,exports){
 /*
  * Copyright 2014 Takuya Asano
  * Copyright 2010-2014 Atilika Inc. and contributors
@@ -8807,7 +8752,7 @@ ViterbiBuilder.prototype.build = function (sentence_str) {
 
 module.exports = ViterbiBuilder;
 
-},{"../util/SurrogateAwareString":22,"./ViterbiLattice":24,"./ViterbiNode":25}],24:[function(require,module,exports){
+},{"../util/SurrogateAwareString":21,"./ViterbiLattice":23,"./ViterbiNode":24}],23:[function(require,module,exports){
 /*
  * Copyright 2014 Takuya Asano
  * Copyright 2010-2014 Atilika Inc. and contributors
@@ -8869,7 +8814,7 @@ ViterbiLattice.prototype.appendEos = function () {
 
 module.exports = ViterbiLattice;
 
-},{"./ViterbiNode":25}],25:[function(require,module,exports){
+},{"./ViterbiNode":24}],24:[function(require,module,exports){
 /*
  * Copyright 2014 Takuya Asano
  * Copyright 2010-2014 Atilika Inc. and contributors
@@ -8920,7 +8865,7 @@ function ViterbiNode(node_name, node_cost, start_pos, length, type, left_id, rig
 
 module.exports = ViterbiNode;
 
-},{}],26:[function(require,module,exports){
+},{}],25:[function(require,module,exports){
 /*
  * Copyright 2014 Takuya Asano
  * Copyright 2010-2014 Atilika Inc. and contributors
@@ -9024,5 +8969,5 @@ ViterbiSearcher.prototype.backward = function (lattice) {
 
 module.exports = ViterbiSearcher;
 
-},{}]},{},[17])(17)
+},{}]},{},[16])(16)
 });
