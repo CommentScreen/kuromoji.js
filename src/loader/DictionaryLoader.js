@@ -32,7 +32,15 @@ function DictionaryLoader(options) {
 }
 
 DictionaryLoader.prototype.loadArrayBuffer = function (file, callback) {
-    throw new Error("DictionaryLoader#loadArrayBuffer should be overwrite");
+    throw new Error("DictionaryLoader#loadArrayBuffer should be overriden");
+};
+
+DictionaryLoader.prototype.isCached = function (file, callback) {
+    throw new Error("DictionaryLoader#isCached should be overridden");
+};
+
+DictionaryLoader.prototype.clearCache = function (file, callback) {
+    throw new Error("DictionaryLoader#clearCache should be overridden");
 };
 
 /**
