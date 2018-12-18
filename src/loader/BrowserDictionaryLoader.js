@@ -134,6 +134,11 @@ BrowserDictionaryLoader.prototype.isCached = function (callback) {
  * @param {BrowserDictionaryLoader~onClearCache} callback Callback function
  */
 BrowserDictionaryLoader.prototype.clearCache = function (callback) {
+    if (this.dbPromise) {
+        this.dbPromise.then((db) => {
+            db.close()
+        });
+    }
     var request = window.indexedDB.deleteDatabase(DB_NAME);
 
     request.onerror = function(event) {
