@@ -45,6 +45,14 @@ NodeDictionaryLoader.prototype.loadArrayBuffer = function (file, callback) {
     });
 };
 
+
+/**
+ * Not implemented.
+ */
+NodeDictionaryLoader.prototype.isCached = function (callback) {
+    return callback(null, false);
+};
+
 /**
  * @callback NodeDictionaryLoader~onLoad
  * @param {Object} err Error object
