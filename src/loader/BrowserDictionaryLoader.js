@@ -96,6 +96,8 @@ BrowserDictionaryLoader.prototype.loadArrayBuffer = function (url, callback) {
                         // doesn't exist in the db yet
                         // new transaction
                         download(url, (err, data) => {
+                            if (err)
+                                return callback(err, null);
                             db.transaction([TABLE_NAME], 'readwrite')
                                 .objectStore(TABLE_NAME).add({
                                     url,
