@@ -32,25 +32,29 @@ function BrowserDictionaryLoader(options) {
 
     // cache is on by default
     if (options.cache !== false) {
-        this.dbPromise = new Promise((resolve, reject) => {
-            var request = window.indexedDB.open(DB_NAME);
-
-            request.onerror = function(event) {
-                throw 'Error loading indexedDB ' + event.target.errorCode;
-            };
-
-            // called after done upgrading (if needed) and ready
-            request.onsuccess = function(event) {
-                resolve(event.target.result);
-            };
-
-            // gets called on initialization or schema upgrade
-            request.onupgradeneeded = function(event) {
-                var db = event.target.result;
-                db.createObjectStore(TABLE_NAME, { keyPath: 'url' });
-            };
-        });
+        this.dbPromise = getDbPromise();
     }
+}
+
+function getDbPromise() {
+    return new Promise((resolve, reject) => {
+        var request = window.indexedDB.open(DB_NAME);
+
+        request.onerror = function(event) {
+            throw 'Error loading indexedDB ' + event.target.errorCode;
+        };
+
+        // called after done upgrading (if needed) and ready
+        request.onsuccess = function(event) {
+            resolve(event.target.result);
+        };
+
+        // gets called on initialization or schema upgrade
+        request.onupgradeneeded = function(event) {
+            var db = event.target.result;
+            db.createObjectStore(TABLE_NAME, { keyPath: 'url' });
+        };
+    });
 }
 
 BrowserDictionaryLoader.prototype = Object.create(DictionaryLoader.prototype);
@@ -82,7 +86,7 @@ function download(url, callback) {
 BrowserDictionaryLoader.prototype.loadArrayBuffer = function (url, callback) {
     // Check if we have it cached
     if (this.dbPromise) {
-        this.dbPromise.then((db) => {
+        this.reconnectIfNeeded(db => {
             // check if it exists
             db.transaction([TABLE_NAME]).objectStore(TABLE_NAME)
                 .get(url).onsuccess = function(event) {
@@ -108,6 +112,19 @@ BrowserDictionaryLoader.prototype.loadArrayBuffer = function (url, callback) {
     }
 };
 
+BrowserDictionaryLoader.prototype.reconnectIfNeeded = function (f) {
+    this.dbPromise.then(db => {
+        try {
+            f(db);
+        } catch (e) {
+            // TODO: catch the right kind of errors
+            console.error(e, 'reconnecting...');
+            this.dbPromise = getDbPromise();
+            this.dbPromise.then(db => f(db));
+        }
+    });
+}
+
 /**
  * Checks if the dictionary files have already been downloaded and are stored
  * in the indexedDB cache.
@@ -115,14 +132,18 @@ BrowserDictionaryLoader.prototype.loadArrayBuffer = function (url, callback) {
  */
 BrowserDictionaryLoader.prototype.isCached = function (callback) {
     if (this.dbPromise) {
-        this.dbPromise.then((db) => {
-            db.transaction([TABLE_NAME]).objectStore(TABLE_NAME)
-                .count().onsuccess = function(event) {
-                    if (event.target.result === NUM_DICS) {
-                        return callback(null, true);
-                    }
-                    return callback(null, false);
+        this.reconnectIfNeeded(db => {
+            let tx = db.transaction([TABLE_NAME]).objectStore(TABLE_NAME)
+                .count()
+            tx.onsuccess = function(event) {
+                if (event.target.result === NUM_DICS) {
+                    return callback(null, true);
                 }
+                return callback(null, false);
+            };
+            tx.onerror = function(event) {
+                return callback(event, false);
+            };
         });
     } else {
         callback(null, false);
