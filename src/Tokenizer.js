@@ -75,7 +75,7 @@ Tokenizer.prototype.tokenize = function (text) {
 };
 
 function removeLatticeNode(lattice) {
-    var newNodesEndAt = lattice.nodes_end_at.slice(0);
+    var newNodesEndAt = lattice.nodes_end_at.slice();
     var maxRowIndex = newNodesEndAt.length - 1;
     var eos = newNodesEndAt[maxRowIndex][0];
     var prev = eos.prev;
@@ -91,7 +91,7 @@ function removeLatticeNode(lattice) {
                     // remove it
                     newNodesEndAt[rowIndex].splice(columnIndex, 1);
                     // yield {...lattice, nodes_end_at: newNodesEndAt};
-                    return {...lattice, nodes_end_at: newNodesEndAt};
+                    return {eos_pos: lattice.eos_pos, nodes_end_at: newNodesEndAt};
                 }
             }
         }
