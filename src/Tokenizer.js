@@ -80,14 +80,14 @@ function removeLatticeNode(lattice) {
     var eos = newNodesEndAt[maxRowIndex][0];
     var prev = eos.prev;
 
-    for (let rowIndex = maxRowIndex; rowIndex > 0; rowIndex--) {
+    for (let rowIndex = maxRowIndex - 1; rowIndex > 0; rowIndex--) {
         if (newNodesEndAt[rowIndex].length === 1) {
             prev = newNodesEndAt[rowIndex][0];
         } else {
             for (let columnIndex = 0; columnIndex < newNodesEndAt[rowIndex].length; columnIndex++) {
-                if (prev === newNodesEndAt[rowIndex][columnIndex].name) {
+                if (prev.name === newNodesEndAt[rowIndex][columnIndex].name) {
                     // change the reference to the next thing in the column (todo: choose cheapest)
-                    prev.name = newNodesEndAt[rowIndex][(columnIndex + 1) % newNodesEndAt[rowIndex].length];
+                    prev.name = newNodesEndAt[rowIndex][(columnIndex + 1) % newNodesEndAt[rowIndex].length].name;
                     // remove it
                     newNodesEndAt[rowIndex].splice(columnIndex, 1);
                     // yield {...lattice, nodes_end_at: newNodesEndAt};
