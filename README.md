@@ -106,3 +106,8 @@ The function tokenize() returns an JSON array like this:
 (This is defined in src/util/IpadicFormatter.js)
 
 See also [JSDoc page](https://takuyaa.github.io/kuromoji.js/jsdoc/) in details.
+
+Glossary:
+ EOS - End of Sentence
+ BOS - Beginning of Sentence
+

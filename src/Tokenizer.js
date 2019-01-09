@@ -74,6 +74,32 @@ Tokenizer.prototype.tokenize = function (text) {
     return tokens;
 };
 
+function removeLatticeNode(lattice) {
+    var newNodesEndAt = lattice.nodes_end_at.slice(0);
+    var maxRowIndex = newNodesEndAt.length - 1;
+    var eos = newNodesEndAt[maxRowIndex][0];
+    var prev = eos.prev;
+
+    for (let rowIndex = maxRowIndex; rowIndex > 0; rowIndex--) {
+        if (newNodesEndAt[rowIndex].length === 1) {
+            prev = newNodesEndAt[rowIndex][0];
+        } else {
+            for (let columnIndex = 0; columnIndex < newNodesEndAt[rowIndex].length; columnIndex++) {
+                if (prev === newNodesEndAt[rowIndex][columnIndex].name) {
+                    // change the reference to the next thing in the column (todo: choose cheapest)
+                    prev.name = newNodesEndAt[rowIndex][(columnIndex + 1) % newNodesEndAt[rowIndex].length];
+                    // remove it
+                    newNodesEndAt[rowIndex].splice(columnIndex, 1);
+                    // yield {...lattice, nodes_end_at: newNodesEndAt};
+                    return {...lattice, nodes_end_at: newNodesEndAt};
+                }
+            }
+        }
+    }
+
+    // nothin was removed
+}
+
 Tokenizer.prototype.tokenizeForSentence = function (sentence, tokens) {
     if (tokens == null) {
         tokens = [];
@@ -84,6 +110,12 @@ Tokenizer.prototype.tokenizeForSentence = function (sentence, tokens) {
     if (tokens.length > 0) {
         last_pos = tokens[tokens.length - 1].word_position;
     }
+
+    //
+    var lattice2 = removeLatticeNode(lattice);
+    // todo: only need to do reverse?
+    var next_best_path = this.viterbi_searcher.backward(lattice2);
+    //
 
     for (var j = 0; j < best_path.length; j++) {
         var node = best_path[j];

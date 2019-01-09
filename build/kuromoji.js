@@ -1282,6 +1282,32 @@ Tokenizer.prototype.tokenize = function (text) {
     return tokens;
 };
 
+function removeLatticeNode(lattice) {
+    var newNodesEndAt = lattice.nodes_end_at.slice(0);
+    var maxRowIndex = newNodesEndAt.length - 1;
+    var eos = newNodesEndAt[maxRowIndex][0];
+    var prev = eos.prev;
+
+    for (let rowIndex = maxRowIndex; rowIndex > 0; rowIndex--) {
+        if (newNodesEndAt[rowIndex].length === 1) {
+            prev = newNodesEndAt[rowIndex][0];
+        } else {
+            for (let columnIndex = 0; columnIndex < newNodesEndAt[rowIndex].length; columnIndex++) {
+                if (prev === newNodesEndAt[rowIndex][columnIndex].name) {
+                    // change the reference to the next thing in the column (todo: choose cheapest)
+                    prev.name = newNodesEndAt[rowIndex][(columnIndex + 1) % newNodesEndAt[rowIndex].length];
+                    // remove it
+                    newNodesEndAt[rowIndex].splice(columnIndex, 1);
+                    // yield {...lattice, nodes_end_at: newNodesEndAt};
+                    return {...lattice, nodes_end_at: newNodesEndAt};
+                }
+            }
+        }
+    }
+
+    // nothin was removed
+}
+
 Tokenizer.prototype.tokenizeForSentence = function (sentence, tokens) {
     if (tokens == null) {
         tokens = [];
@@ -1292,6 +1318,12 @@ Tokenizer.prototype.tokenizeForSentence = function (sentence, tokens) {
     if (tokens.length > 0) {
         last_pos = tokens[tokens.length - 1].word_position;
     }
+
+    //
+    var lattice2 = removeLatticeNode(lattice);
+    // todo: only need to do reverse?
+    var next_best_path = this.viterbi_searcher.backward(lattice2);
+    //
 
     for (var j = 0; j < best_path.length; j++) {
         var node = best_path[j];
@@ -2425,25 +2457,29 @@ function BrowserDictionaryLoader(options) {
 
     // cache is on by default
     if (options.cache !== false) {
-        this.dbPromise = new Promise((resolve, reject) => {
-            var request = window.indexedDB.open(DB_NAME);
-
-            request.onerror = function(event) {
-                throw 'Error loading indexedDB ' + event.target.errorCode;
-            };
-
-            // called after done upgrading (if needed) and ready
-            request.onsuccess = function(event) {
-                resolve(event.target.result);
-            };
-
-            // gets called on initialization or schema upgrade
-            request.onupgradeneeded = function(event) {
-                var db = event.target.result;
-                db.createObjectStore(TABLE_NAME, { keyPath: 'url' });
-            };
-        });
+        this.dbPromise = getDbPromise();
     }
+}
+
+function getDbPromise() {
+    return new Promise((resolve, reject) => {
+        var request = window.indexedDB.open(DB_NAME);
+
+        request.onerror = function(event) {
+            throw 'Error loading indexedDB ' + event.target.errorCode;
+        };
+
+        // called after done upgrading (if needed) and ready
+        request.onsuccess = function(event) {
+            resolve(event.target.result);
+        };
+
+        // gets called on initialization or schema upgrade
+        request.onupgradeneeded = function(event) {
+            var db = event.target.result;
+            db.createObjectStore(TABLE_NAME, { keyPath: 'url' });
+        };
+    });
 }
 
 BrowserDictionaryLoader.prototype = Object.create(DictionaryLoader.prototype);
@@ -2475,7 +2511,7 @@ function download(url, callback) {
 BrowserDictionaryLoader.prototype.loadArrayBuffer = function (url, callback) {
     // Check if we have it cached
     if (this.dbPromise) {
-        this.dbPromise.then((db) => {
+        this.reconnectIfNeeded(db => {
             // check if it exists
             db.transaction([TABLE_NAME]).objectStore(TABLE_NAME)
                 .get(url).onsuccess = function(event) {
@@ -2485,6 +2521,8 @@ BrowserDictionaryLoader.prototype.loadArrayBuffer = function (url, callback) {
                         // doesn't exist in the db yet
                         // new transaction
                         download(url, (err, data) => {
+                            if (err)
+                                return callback(err, null);
                             db.transaction([TABLE_NAME], 'readwrite')
                                 .objectStore(TABLE_NAME).add({
                                     url,
@@ -2501,6 +2539,19 @@ BrowserDictionaryLoader.prototype.loadArrayBuffer = function (url, callback) {
     }
 };
 
+BrowserDictionaryLoader.prototype.reconnectIfNeeded = function (f) {
+    this.dbPromise.then(db => {
+        try {
+            f(db);
+        } catch (e) {
+            // TODO: catch the right kind of errors
+            console.error(e, 'reconnecting...');
+            this.dbPromise = getDbPromise();
+            this.dbPromise.then(db => f(db));
+        }
+    });
+}
+
 /**
  * Checks if the dictionary files have already been downloaded and are stored
  * in the indexedDB cache.
@@ -2508,14 +2559,18 @@ BrowserDictionaryLoader.prototype.loadArrayBuffer = function (url, callback) {
  */
 BrowserDictionaryLoader.prototype.isCached = function (callback) {
     if (this.dbPromise) {
-        this.dbPromise.then((db) => {
-            db.transaction([TABLE_NAME]).objectStore(TABLE_NAME)
-                .count().onsuccess = function(event) {
-                    if (event.target.result === NUM_DICS) {
-                        return callback(null, true);
-                    }
-                    return callback(null, false);
+        this.reconnectIfNeeded(db => {
+            let tx = db.transaction([TABLE_NAME]).objectStore(TABLE_NAME)
+                .count()
+            tx.onsuccess = function(event) {
+                if (event.target.result === NUM_DICS) {
+                    return callback(null, true);
                 }
+                return callback(null, false);
+            };
+            tx.onerror = function(event) {
+                return callback(event, false);
+            };
         });
     } else {
         callback(null, false);
@@ -2527,6 +2582,11 @@ BrowserDictionaryLoader.prototype.isCached = function (callback) {
  * @param {BrowserDictionaryLoader~onClearCache} callback Callback function
  */
 BrowserDictionaryLoader.prototype.clearCache = function (callback) {
+    if (this.dbPromise) {
+        this.dbPromise.then((db) => {
+            db.close()
+        });
+    }
     var request = window.indexedDB.deleteDatabase(DB_NAME);
 
     request.onerror = function(event) {
@@ -2585,11 +2645,11 @@ DictionaryLoader.prototype.loadArrayBuffer = function (file, callback) {
     throw new Error("DictionaryLoader#loadArrayBuffer should be overriden");
 };
 
-DictionaryLoader.prototype.isCached = function (file, callback) {
+DictionaryLoader.prototype.isCached = function (callback) {
     throw new Error("DictionaryLoader#isCached should be overridden");
 };
 
-DictionaryLoader.prototype.clearCache = function (file, callback) {
+DictionaryLoader.prototype.clearCache = function (callback) {
     throw new Error("DictionaryLoader#clearCache should be overridden");
 };
 
