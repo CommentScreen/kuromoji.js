@@ -1283,23 +1283,21 @@ Tokenizer.prototype.tokenize = function (text) {
 };
 
 function removeLatticeNode(lattice) {
-    var newNodesEndAt = lattice.nodes_end_at.slice(0);
-    var maxRowIndex = newNodesEndAt.length - 1;
-    var eos = newNodesEndAt[maxRowIndex][0];
-    var prev = eos.prev;
+    var maxRowIndex = lattice.nodes_end_at.length - 1;
+    var eos = lattice.nodes_end_at[maxRowIndex][0];
+    var cur = eos;
 
-    for (let rowIndex = maxRowIndex; rowIndex > 0; rowIndex--) {
-        if (newNodesEndAt[rowIndex].length === 1) {
-            prev = newNodesEndAt[rowIndex][0];
+    for (let rowIndex = maxRowIndex - 1; rowIndex > 0; rowIndex--) {
+        if (lattice.nodes_end_at[rowIndex].length === 1) {
+            cur = lattice.nodes_end_at[rowIndex][0];
         } else {
-            for (let columnIndex = 0; columnIndex < newNodesEndAt[rowIndex].length; columnIndex++) {
-                if (prev === newNodesEndAt[rowIndex][columnIndex].name) {
+            for (let columnIndex = 0; columnIndex < lattice.nodes_end_at[rowIndex].length; columnIndex++) {
+                if (cur.prev.name === lattice.nodes_end_at[rowIndex][columnIndex].name) {
                     // change the reference to the next thing in the column (todo: choose cheapest)
-                    prev.name = newNodesEndAt[rowIndex][(columnIndex + 1) % newNodesEndAt[rowIndex].length];
+                    cur.prev = lattice.nodes_end_at[rowIndex][(columnIndex + 1) % lattice.nodes_end_at[rowIndex].length];
                     // remove it
-                    newNodesEndAt[rowIndex].splice(columnIndex, 1);
-                    // yield {...lattice, nodes_end_at: newNodesEndAt};
-                    return {...lattice, nodes_end_at: newNodesEndAt};
+                    lattice.nodes_end_at[rowIndex].splice(columnIndex, 1);
+                    return lattice;
                 }
             }
         }
@@ -1308,25 +1306,28 @@ function removeLatticeNode(lattice) {
     // nothin was removed
 }
 
+function cloneLattice(lattice) {
+    let cloned = {...lattice, nodes_end_at: []};
+    for (let i = 0; i < lattice.nodes_end_at.length; i++) {
+        cloned.nodes_end_at[i] = lattice.nodes_end_at[i].slice();
+    }
+    return cloned;
+}
+
 Tokenizer.prototype.tokenizeForSentence = function (sentence, tokens) {
     if (tokens == null) {
         tokens = [];
     }
     var lattice = this.getLattice(sentence);
-    var best_path = this.viterbi_searcher.search(lattice);
+    var cur_path = this.viterbi_searcher.search(lattice);
     var last_pos = 0;
     if (tokens.length > 0) {
         last_pos = tokens[tokens.length - 1].word_position;
     }
 
-    //
-    var lattice2 = removeLatticeNode(lattice);
-    // todo: only need to do reverse?
-    var next_best_path = this.viterbi_searcher.backward(lattice2);
-    //
 
-    for (var j = 0; j < best_path.length; j++) {
-        var node = best_path[j];
+    for (var j = 0; j < cur_path.length; j++) {
+        var node = cur_path[j];
 
         var token, features, features_line;
         if (node.type === "KNOWN") {
@@ -1352,6 +1353,38 @@ Tokenizer.prototype.tokenizeForSentence = function (sentence, tokens) {
         }
 
         tokens.push(token);
+    }
+
+    for (let newLattice = removeLatticeNode(cloneLattice(lattice)); newLattice; newLattice = removeLatticeNode(cloneLattice(newLattice))) {
+        cur_path = this.viterbi_searcher.backward(newLattice);
+        for (var j = 0; j < cur_path.length; j++) {
+            var node = cur_path[j];
+
+            var token, features, features_line;
+            if (node.type === "KNOWN") {
+                features_line = this.token_info_dictionary.getFeatures(node.name);
+                if (features_line == null) {
+                    features = [];
+                } else {
+                    features = features_line.split(",");
+                }
+                token = this.formatter.formatEntry(node.name, last_pos + node.start_pos, node.type, features);
+            } else if (node.type === "UNKNOWN") {
+                // Unknown word
+                features_line = this.unknown_dictionary.getFeatures(node.name);
+                if (features_line == null) {
+                    features = [];
+                } else {
+                    features = features_line.split(",");
+                }
+                token = this.formatter.formatUnknownEntry(node.name, last_pos + node.start_pos, node.type, features, node.surface_form);
+            } else {
+                // TODO User dictionary
+                token = this.formatter.formatEntry(node.name, last_pos + node.start_pos, node.type, []);
+            }
+
+            tokens.push(token);
+        }
     }
 
     return tokens;
