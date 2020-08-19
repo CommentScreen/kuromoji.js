@@ -26,7 +26,7 @@ var Tokenizer = require("../Tokenizer");
  * @param {object} options Options for the dictionary (only dic_path for now)
  * @constructor
  */
-function DictionaryLoader(options) {
+function DictionaryLoader(options = {}) {
     this.dic = new DynamicDictionaries();
     this.dic_path = options.dic_path || 'dict/';
 }

@@ -25,7 +25,7 @@ var DictionaryLoader = require("./DictionaryLoader");
  * @param {object} options Options for the dictionary (only dic_path for now)
  * @constructor
  */
-function NodeDictionaryLoader(options) {
+function NodeDictionaryLoader(options = {}) {
     DictionaryLoader.call(this, options);
 }
 

@@ -13,6 +13,7 @@
     "doublearray": "0.0.2"
   },
   "devDependencies": {
+    "arraybuffer-loader": "^1.0.8",
     "browserify": "^16.1.1",
     "chai": "^4.1.2",
     "coveralls": "^3.0.0",

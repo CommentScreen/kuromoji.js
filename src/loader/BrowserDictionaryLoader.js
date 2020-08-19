@@ -27,7 +27,7 @@ var NUM_DICS = 12;
  * @param {object} options Options for the dictionary (only dic_path and no_cache for now)
  * @constructor
  */
-function BrowserDictionaryLoader(options) {
+function BrowserDictionaryLoader(options = {}) {
     DictionaryLoader.call(this, options);
 
     // cache is on by default
@@ -76,6 +76,34 @@ function download(url, callback) {
     xhr.send();
 }
 
+const base = require('arraybuffer-loader!../../dict/base.dat');
+const cc = require('arraybuffer-loader!../../dict/cc.dat');
+const check = require('arraybuffer-loader!../../dict/check.dat');
+const tid = require('arraybuffer-loader!../../dict/tid.dat');
+const tid_map = require('arraybuffer-loader!../../dict/tid_map.dat');
+const tid_pos = require('arraybuffer-loader!../../dict/tid_pos.dat');
+const unk = require('arraybuffer-loader!../../dict/unk.dat');
+const unk_char = require('arraybuffer-loader!../../dict/unk_char.dat');
+const unk_compat = require('arraybuffer-loader!../../dict/unk_compat.dat');
+const unk_invoke = require('arraybuffer-loader!../../dict/unk_invoke.dat');
+const unk_map = require('arraybuffer-loader!../../dict/unk_map.dat');
+const unk_pos = require('arraybuffer-loader!../../dict/unk_pos.dat');
+
+const dicts = {
+    base,
+    cc,
+    check,
+    tid,
+    tid_map,
+    tid_pos,
+    unk,
+    unk_char,
+    unk_compat,
+    unk_invoke,
+    unk_map,
+    unk_pos,
+};
+
 /**
  * Utility function to load dictionary.
  * Use gzip, or brotli compression may be used. Make sure `Content-Encoding`
@@ -85,33 +113,39 @@ function download(url, callback) {
  */
 BrowserDictionaryLoader.prototype.loadArrayBuffer = function (url, callback) {
     // Check if we have it cached
-    if (this.dbPromise) {
-        this.reconnectIfNeeded(db => {
-            // check if it exists
-            db.transaction([TABLE_NAME]).objectStore(TABLE_NAME)
-                .get(url).onsuccess = function(event) {
-                    if (event.target.result) {
-                        callback(null, event.target.result.data);
-                    } else {
-                        // doesn't exist in the db yet
-                        // new transaction
-                        download(url, (err, data) => {
-                            if (err)
-                                return callback(err, null);
-                            db.transaction([TABLE_NAME], 'readwrite')
-                                .objectStore(TABLE_NAME).add({
-                                    url,
-                                    data,
-                                }).onsuccess = function(event) {
-                                    callback(null, data);
-                                };
-                        });
-                    }
-                };
-        });
-    } else {
-        download(url, callback);
-    }
+    // if (this.dbPromise) {
+    //     this.reconnectIfNeeded(db => {
+    //         // check if it exists
+    //         db.transaction([TABLE_NAME]).objectStore(TABLE_NAME)
+    //             .get(url).onsuccess = function(event) {
+    //                 if (event.target.result) {
+    //                     callback(null, event.target.result.data);
+    //                 } else {
+    //                     // doesn't exist in the db yet
+    //                     // new transaction
+    //                     download(url, (err, data) => {
+    //                         if (err)
+    //                             return callback(err, null);
+    //                         db.transaction([TABLE_NAME], 'readwrite')
+    //                             .objectStore(TABLE_NAME).add({
+    //                                 url,
+    //                                 data,
+    //                             }).onsuccess = function(event) {
+    //                                 callback(null, data);
+    //                             };
+    //                     });
+    //                 }
+    //             };
+    //     });
+    // } else {
+    //     download(url, callback);
+    // }
+    const dictNameStartIdx = url.lastIndexOf('/');
+    const dictName = url.substring(dictNameStartIdx + 1, url.length - 4);
+    // console.log('dict name', dictName);
+    const raw = dicts[dictName];
+    // needs to be array buffer
+    callback(null, raw);
 };
 
 BrowserDictionaryLoader.prototype.reconnectIfNeeded = function (f) {
