@@ -17,7 +17,6 @@
 
 "use strict";
 
-var path = require("path");
 var DynamicDictionaries = require("../dict/DynamicDictionaries");
 var Tokenizer = require("../Tokenizer");
 
@@ -52,7 +51,7 @@ DictionaryLoader.prototype.load = async function (load_callback) {
     var dic = this.dic;
     var partialGetArrayBufferData = (name) => {
         return new Promise((resolve, reject) => {
-            this.loadArrayBuffer(path.join(this.dic_path, name + '.dat'), (err, res) => {
+            this.loadArrayBuffer(this.dic_path + name + '.dat', (err, res) => {
                 if (err)
                     return reject(err);
                 return resolve(res);
