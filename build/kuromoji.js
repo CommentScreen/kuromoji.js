@@ -8087,6 +8087,8 @@ BrowserDictionaryLoader.prototype = Object.create(DictionaryLoader.prototype);
  * @param {BrowserDictionaryLoader~onLoad} callback Callback function
  */
 BrowserDictionaryLoader.prototype.loadArrayBuffer = function (url, callback) {
+    console.log(url)
+    console.log('hello!')
     var xhr = new XMLHttpRequest();
     xhr.open("GET", url, true);
     xhr.responseType = "arraybuffer";
@@ -8150,6 +8152,19 @@ DictionaryLoader.prototype.loadArrayBuffer = function (file, callback) {
     throw new Error("DictionaryLoader#loadArrayBuffer should be overwrite");
 };
 
+function dic_file_path(dic_path, filename) {
+    if(dic_path.match(/^https?:\/\//)) {
+        if(dic_path.slice(-1) ==- '/') {
+            return dic_path + filename
+        } else {
+            return dic_path + '/' + filename
+        }
+
+    } else {
+        return path.join(dic_path, filename)
+    }
+}
+
 /**
  * Load dictionary files
  * @param {DictionaryLoader~onLoad} load_callback Callback function called after loaded
@@ -8163,7 +8178,7 @@ DictionaryLoader.prototype.load = function (load_callback) {
         // Trie
         function (callback) {
             async.map([ "base.dat", "check.dat" ], function (filename, _callback) {
-                loadArrayBuffer(path.join(dic_path, filename), function (err, buffer) {
+                loadArrayBuffer(dic_file_path(dic_path, filename), function (err, buffer) {
                     if(err) {
                         return _callback(err);
                     }
@@ -8183,7 +8198,7 @@ DictionaryLoader.prototype.load = function (load_callback) {
         // Token info dictionaries
         function (callback) {
             async.map([ "tid.dat", "tid_pos.dat", "tid_map.dat" ], function (filename, _callback) {
-                loadArrayBuffer(path.join(dic_path, filename), function (err, buffer) {
+                loadArrayBuffer(dic_file_path(dic_path, filename), function (err, buffer) {
                     if(err) {
                         return _callback(err);
                     }
@@ -8203,7 +8218,7 @@ DictionaryLoader.prototype.load = function (load_callback) {
         },
         // Connection cost matrix
         function (callback) {
-            loadArrayBuffer(path.join(dic_path, "cc.dat"), function (err, buffer) {
+            loadArrayBuffer(dic_file_path(dic_path, "cc.dat"), function (err, buffer) {
                 if(err) {
                     return callback(err);
                 }
@@ -8215,7 +8230,7 @@ DictionaryLoader.prototype.load = function (load_callback) {
         // Unknown dictionaries
         function (callback) {
             async.map([ "unk.dat", "unk_pos.dat", "unk_map.dat", "unk_char.dat", "unk_compat.dat", "unk_invoke.dat" ], function (filename, _callback) {
-                loadArrayBuffer(path.join(dic_path, filename), function (err, buffer) {
+                loadArrayBuffer(dic_file_path(dic_path, filename), function (err, buffer) {
                     if(err) {
                         return _callback(err);
                     }
