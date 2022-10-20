@@ -37,7 +37,7 @@ DictionaryLoader.prototype.loadArrayBuffer = function (file, callback) {
 
 function dic_file_path(dic_path, filename) {
     if(dic_path.match(/^https?:\/\//)) {
-        if(dic_path.slice(-1) ==- '/') {
+        if(dic_path.slice(-1) === '/') {
             return dic_path + filename
         } else {
             return dic_path + '/' + filename

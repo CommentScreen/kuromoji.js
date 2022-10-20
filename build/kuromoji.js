@@ -8087,8 +8087,6 @@ BrowserDictionaryLoader.prototype = Object.create(DictionaryLoader.prototype);
  * @param {BrowserDictionaryLoader~onLoad} callback Callback function
  */
 BrowserDictionaryLoader.prototype.loadArrayBuffer = function (url, callback) {
-    console.log(url)
-    console.log('hello!')
     var xhr = new XMLHttpRequest();
     xhr.open("GET", url, true);
     xhr.responseType = "arraybuffer";
@@ -8154,7 +8152,7 @@ DictionaryLoader.prototype.loadArrayBuffer = function (file, callback) {
 
 function dic_file_path(dic_path, filename) {
     if(dic_path.match(/^https?:\/\//)) {
-        if(dic_path.slice(-1) ==- '/') {
+        if(dic_path.slice(-1) === '/') {
             return dic_path + filename
         } else {
             return dic_path + '/' + filename
